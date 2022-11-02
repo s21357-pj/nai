@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Created By  : Ilya Ryzhkov / Katarzyna Węsierska
-# Created Date: oct 2022
+# Created Date: nov 2022
 # version = '0.1'
 # Algorytm FL oblicza ryzyko nadania dostępu do pomieszczenia na
 # podstawie wartości odczytanych z czujników temperatury,
@@ -13,92 +13,84 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 
-# Nowe Antecedent/Consequent obiekty
-humidity = ctrl.Antecedent(np.arange(0, 1, 0.01), 'humidity')
-tall = ctrl.Antecedent(np.arange(1, 250, 1), 'tall')
-temp = ctrl.Antecedent(np.arange(35, 42, 0.1), 'temp')
-risk = ctrl.Consequent(np.arange(0, 1, 0.01), 'risk')
 
-# Mapujemy zakresy liczb
-humidity.automf(5, variable_type='quant')
-tall.automf(7, variable_type='quant')
-temp.automf(3, variable_type='quant')
-risk.automf(3, variable_type='quant')
+class AccessControlRisk:
+    """
+    Klasa wywołuje framework FL i deklaruje reguły:
+    ryzyko jest wysokie w przypadku podwyższonej temperatury i wilgotności
+    lub niskiego wzrostu
+    """
+    def __init__(self):
+        self.humidity = ctrl.Antecedent(np.arange(0, 1, 0.01), 'humidity')
+        self.tall = ctrl.Antecedent(np.arange(1, 250, 1), 'tall')
+        self.temp = ctrl.Antecedent(np.arange(35, 42, 0.1), 'temp')
+        self.risk = ctrl.Consequent(np.arange(0, 1, 0.01), 'risk')
 
-risk['low'] = fuzz.trimf(risk.universe, [0, 0, 0.33])
-risk['medium'] = fuzz.trimf(risk.universe, [0, 0.33, 0.5])
-risk['high'] = fuzz.trimf(risk.universe, [0.5, 1, 1])
+        # Mapujemy zakresy liczb
+        self.humidity.automf(5, variable_type='quant')
+        self.tall.automf(7, variable_type='quant')
+        self.temp.automf(3, variable_type='quant')
+        self.risk.automf(3, variable_type='quant')
 
-rules = [
-    ctrl.Rule(tall['high'] & temp['low'] & humidity['low'], risk['low']),
-    ctrl.Rule(tall['higher'] & temp['low'] & humidity['low'], risk['low']),
-    ctrl.Rule(tall['highest'] & temp['low'] & humidity['low'], risk['low']),
-    ctrl.Rule(tall['high'] & humidity['average'] & temp['low'],
-              risk['average']),
-    ctrl.Rule(tall['higher'] & humidity['average'] & temp['low'],
-              risk['average']),
-    ctrl.Rule(tall['highest'] & humidity['average'] & temp['low'],
-              risk['average']),
-    ctrl.Rule(tall['low'] | tall['average'] | tall['lower'] | tall['lowest'],
-              risk['high']),
-    ctrl.Rule(humidity['high'] | temp['high'], risk['high'])
-]
+        self.risk['low'] = fuzz.trimf(self.risk.universe, [0, 0, 0.33])
+        self.risk['medium'] = fuzz.trimf(self.risk.universe, [0, 0.33, 0.5])
+        self.risk['high'] = fuzz.trimf(self.risk.universe, [0.5, 1, 1])
 
-access_ctrl = ctrl.ControlSystem(rules)
-access = ctrl.ControlSystemSimulation(access_ctrl)
+        self.rules = [
+            ctrl.Rule(self.tall['high'] & self.temp['low'] &
+                      self.humidity['low'], self.risk['low']),
+            ctrl.Rule(self.tall['higher'] & self.temp['low'] &
+                      self.humidity['low'], self.risk['low']),
+            ctrl.Rule(self.tall['highest'] & self.temp['low']
+                      & self.humidity['low'], self.risk['low']),
+            ctrl.Rule(self.tall['high'] & self.humidity['average']
+                      & self.temp['low'], self.risk['average']),
+            ctrl.Rule(self.tall['higher'] & self.humidity['average']
+                      & self.temp['low'],
+                      self.risk['average']),
+            ctrl.Rule(self.tall['highest'] & self.humidity['average']
+                      & self.temp['low'],
+                      self.risk['average']),
+            ctrl.Rule(self.tall['low'] | self.tall['average']
+                      | self.tall['lower'] | self.tall['lowest'],
+                      self.risk['high']),
+            ctrl.Rule(self.humidity['high'] | self.temp['high'],
+                      self.risk['high'])
+        ]
 
-access.input['humidity'] = 0.05
-access.input['tall'] = 170
-access.input['temp'] = 36.6
-access.compute()
-print('5% 170cm 36.6 C = ' + str(access.output['risk']))
+        self.access_ctrl = ctrl.ControlSystem(self.rules)
+        self.access = ctrl.ControlSystemSimulation(self.access_ctrl)
+
+    def compute(self, humidity, tall, temp):
+        """Zwraca obliczone ryzyko"""
+        self.access.input['humidity'] = humidity
+        self.access.input['tall'] = tall
+        self.access.input['temp'] = temp
+        self.access.compute()
+        return str(self.access.output['risk'])
+
+
+access_control_risk = AccessControlRisk()
+print('5% 170cm 36.6 C = ' + access_control_risk.compute(0.05, 170, 36.6))
 # Wynik: 0.14895755305867667
 
-access.input['humidity'] = 0.3
-access.input['tall'] = 170
-access.input['temp'] = 36.6
-access.compute()
-print('30% 170cm 36.6 C = ' + str(access.output['risk']))
+print('30% 170cm 36.6 C = ' + access_control_risk.compute(0.5, 170, 36.6))
 # Wynik: 0.3776572454105089
 
-access.input['humidity'] = 0.7
-access.input['tall'] = 170
-access.input['temp'] = 36.6
-access.compute()
-print('70% 170cm 36.6 C = ' + str(access.output['risk']))
+print('70% 170cm 36.6 C = ' + access_control_risk.compute(0.7, 170, 36.6))
 # Wynik: 0.6809200791795371
 
-access.input['humidity'] = 0.4
-access.input['tall'] = 170
-access.input['temp'] = 40.0
-access.compute()
-print('40% 170cm 40 C = ' + str(access.output['risk']))
+print('40% 170cm 40 C = ' + access_control_risk.compute(0.4, 170, 40.0))
 # Wynik: 0.7955923250321608
 
-access.input['humidity'] = 0.1
-access.input['tall'] = 100
-access.input['temp'] = 36.6
-access.compute()
+print('10% 100cm 36.6 C = ' + access_control_risk.compute(0.1, 100, 36.6))
 # Wynik: 0.8093567967688188
 
-print('10% 100cm 36.6 C = ' + str(access.output['risk']))
-access.input['humidity'] = 0.7
-access.input['tall'] = 100
-access.input['temp'] = 36.6
-access.compute()
-print('70% 100cm 36.6 C = ' + str(access.output['risk']))
+print('70% 100cm 36.6 C = ' + access_control_risk.compute(0.7, 100, 36.6))
 # Wynik: 0.8232768179233729
 
-access.input['humidity'] = 0.5
-access.input['tall'] = 170
-access.input['temp'] = 36.6
-access.compute()
-print('50% 170cm 36.6 C = ' + str(access.output['risk']))
+print('50% 170cm 36.6 C = ' + access_control_risk.compute(0.5, 170, 36.6))
 # Wynik: 0.49506390267089445
 
-access.input['humidity'] = 0.1
-access.input['tall'] = 250
-access.input['temp'] = 36.6
-access.compute()
-print('10% 250cm 36.6 C = ' + str(access.output['risk']))
+print('10% 250cm 36.6 C = ' + access_control_risk.compute(0.1, 1250, 36.6))
 # Wynik: 0.13447960618846697
