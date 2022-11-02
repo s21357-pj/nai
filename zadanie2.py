@@ -16,7 +16,7 @@ from skfuzzy import control as ctrl
 
 class AccessControlRisk:
     """
-    Klasa wywołuje framework FL i deklaruje reguły:
+    Klasa wywoluje framework FL i deklaruje reguly:
     ryzyko jest wysokie w przypadku podwyższonej temperatury i wilgotności
     lub niskiego wzrostu
     """
