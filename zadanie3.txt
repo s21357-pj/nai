@@ -1,0 +1,39 @@
+========== Test for Paweł Czapiewski =============
+5 not recomended films: 
+Armageddon
+Smoleńsk
+Batman i Robin
+Inside Job
+In the Name of the Father
+5 recomended films: 
+The Lord of the Rings: The Return of the King
+The Shawshank Redemption
+Intouchables
+The Green Mile
+12 Angry Men
+========== Test for Wanda Bojanowska =============
+5 not recomended films: 
+Armageddon
+Smoleńsk
+Umma
+Kobiety Mafii
+Batman i Robin
+5 recomended films: 
+Mulan
+Pulp Fiction
+Terminator
+Johnny Bravo
+Star Wars Revenge of the Sith
+========== Test for Szymon Olkiewicz =============
+5 not recomended films: 
+Armageddon
+Smoleńsk
+Umma
+Listy do M.
+Kobiety Mafii
+5 recomended films: 
+Gladiator
+Shutter Island
+Killerów Dwoch
+Breaking Bad
+Wściekłe Pięści Węża
